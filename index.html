@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plataforma de Pagamentos de Terreno</title>
+  <style>
+    body{
+        background-color: #dddddd;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #353434;
+      text-align: left;
+      padding: 8px;
+    }
+    th {
+      background-color: #a7f4a1;
+    }
+    h2{
+     text-align: center;
+     font-size: 32px;
+
+    }
+  </style>
+</head>
+<body>
+
+<h2>Plataforma de Pagamentos de Terreno</h2>
+
+<div id="clientes">
+  <h3>Adicionar Cliente:</h3>
+  <p>
+    Nome: <input type="text" id="nomeCliente">
+    Entrada: R$ <input type="number" id="entradaCliente" min="0" step="1" value="0">
+    Total: R$ <input type="number" id="totalCliente" min="1" step="1" value="22000">
+    <button onclick="adicionarCliente()">Adicionar</button>
+  </p>
+</div>
+
+<h3>Tabela de Pagamentos:</h3>
+
+<table id="tabelaPagamento">
+  <tr>
+    <th>Cliente</th>
+    <th>Entrada</th>
+    <th>Parcelas</th>
+    <th>Total Pago</th>
+    <th>Restante a Pagar</th>
+    <th>Ações</th>
+  </tr>
+</table>
+
+<script>
+  let clientes = [];
+
+  if (localStorage.getItem('dadosClientes')) {
+    clientes = JSON.parse(localStorage.getItem('dadosClientes'));
+  }
+
+  function salvarDadosLocais() {
+    localStorage.setItem('dadosClientes', JSON.stringify(clientes));
+  }
+
+  function adicionarCliente() {
+    const nome = document.getElementById('nomeCliente').value;
+    const entrada = parseFloat(document.getElementById('entradaCliente').value);
+    const total = parseFloat(document.getElementById('totalCliente').value);
+
+    if (nome !== '' && entrada >= 0 && total > 0) {
+      const cliente = {
+        nome: nome,
+        entrada: entrada,
+        total: total,
+        parcela: 250,
+        pagamentosFeitos: 0
+      };
+
+      clientes.push(cliente);
+      gerarTabelaPagamento();
+      salvarDadosLocais();
+    } else {
+      alert("Por favor, insira um nome, uma entrada válida e um total válido para o cliente.");
+    }
+  }
+
+  function gerarTabelaPagamento() {
+    const tabela = document.getElementById('tabelaPagamento');
+    tabela.innerHTML = `
+      <tr>
+        <th>Cliente</th>
+        <th>Entrada</th>
+        <th>Parcelas</th>
+        <th>Total Pago</th>
+        <th>Restante a Pagar</th>
+        <th>Ações</th>
+      </tr>
+    `;
+
+    clientes.forEach((cliente, index) => {
+      const row = tabela.insertRow();
+      const cellCliente = row.insertCell(0);
+      const cellEntrada = row.insertCell(1);
+      const cellParcelas = row.insertCell(2);
+      const cellTotalPago = row.insertCell(3);
+      const cellRestante = row.insertCell(4);
+      const cellAcoes = row.insertCell(5);
+
+      const totalPago = cliente.entrada + cliente.parcela * cliente.pagamentosFeitos;
+      const restantePagar = cliente.total - totalPago;
+
+      cellCliente.innerHTML = `<input type="text" value="${cliente.nome}" onchange="editarNome(${index}, this.value)">`;
+      cellEntrada.innerHTML = `<input type="number" value="${cliente.entrada}" min="0" step="1" onchange="editarEntrada(${index}, this.value)">`;
+      cellParcelas.innerHTML = cliente.parcela;
+      cellTotalPago.innerHTML = `R$ ${totalPago.toFixed(2)}`;
+      cellRestante.innerHTML = `R$ ${restantePagar.toFixed(2)}`;
+
+      const botaoPagar = document.createElement('button');
+      botaoPagar.innerHTML = 'Pagar Parcela';
+      botaoPagar.onclick = function() {
+        pagarParcela(index);
+      };
+      cellAcoes.appendChild(botaoPagar);
+    });
+  }
+
+  function pagarParcela(index) {
+    if (clientes[index].total - clientes[index].entrada > 0) {
+      clientes[index].pagamentosFeitos++;
+      gerarTabelaPagamento();
+      salvarDadosLocais();
+    } else {
+      alert("Este cliente já quitou todas as parcelas!");
+    }
+  }
+
+  function editarNome(index, novoNome) {
+    clientes[index].nome = novoNome;
+    salvarDadosLocais();
+  }
+
+  function editarEntrada(index, novaEntrada) {
+    clientes[index].entrada = parseFloat(novaEntrada);
+    salvarDadosLocais();
+  }
+
+  gerarTabelaPagamento();
+</script>
+
+</body>
+</html>
